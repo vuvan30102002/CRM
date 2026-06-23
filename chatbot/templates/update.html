@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Cập nhật khách hàng</title>
+
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background:#f4f4f4;
+            padding:30px;
+        }
+
+        .container{
+            max-width:600px;
+            margin:auto;
+            background:white;
+            padding:25px;
+            border-radius:10px;
+            box-shadow:0 0 10px rgba(0,0,0,.1);
+        }
+
+        h2{
+            margin-bottom:20px;
+        }
+
+        .form-group{
+            margin-bottom:15px;
+        }
+
+        label{
+            display:block;
+            margin-bottom:5px;
+            font-weight:bold;
+        }
+
+        input, select{
+            width:100%;
+            padding:10px;
+            border:1px solid #ddd;
+            border-radius:5px;
+        }
+
+        button{
+            background:#28a745;
+            color:white;
+            border:none;
+            padding:10px 20px;
+            border-radius:5px;
+            cursor:pointer;
+        }
+
+        button:hover{
+            background:#218838;
+        }
+
+        .back-btn{
+            background:#6c757d;
+            margin-left:10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Cập nhật khách hàng</h2>
+
+    <form id="updateForm">
+
+        <div class="form-group">
+            <label>Họ tên</label>
+            <input type="text" id="name">
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email">
+        </div>
+
+        <div class="form-group">
+            <label>Số điện thoại</label>
+            <input type="text" id="phone">
+        </div>
+
+        <div class="form-group">
+            <label>Nguồn</label>
+            <select id="source">
+                <option value="facebook">Facebook</option>
+                <option value="zalo">Zalo</option>
+                <option value="tiktok">TikTok</option>
+                <option value="website">Website</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Trạng thái</label>
+            <select id="status">
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="qualified">Qualified</option>
+                <option value="won">Won</option>
+                <option value="lost">Lost</option>
+            </select>
+        </div>
+
+        <button type="submit">Cập nhật</button>
+        <button type="button" class="back-btn" onclick="history.back()">Quay lại</button>
+
+    </form>
+
+</div>
+
+<script>
+
+const token = localStorage.getItem("access_token");
+
+if(!token){
+    window.location.href = "/api/login_view";
+}
+
+// Lấy id từ URL
+// Ví dụ: /customer-update.html/46
+const customerId = window.location.pathname.split('/').pop();
+
+// Load dữ liệu khách hàng
+async function loadCustomer(){
+
+    const response = await fetch(
+        `/api/get_customer/${customerId}`,
+        {
+            method: "GET",
+            headers: {
+                "Authorization":
+                    `Bearer ${token}`,
+                "Content-Type":
+                    "application/json"
+            }
+        }
+    );
+
+    const data = await response.json();
+
+    document.getElementById("name").value = data.name || "";
+    document.getElementById("email").value = data.email || "";
+    document.getElementById("phone").value = data.phone || "";
+    document.getElementById("source").value = data.source || "";
+    document.getElementById("status").value = data.status || "";
+}
+
+loadCustomer();
+
+
+// Update
+document.getElementById("updateForm")
+.addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const response = await fetch(
+        `/api/update_customer/${customerId}`,
+        {
+            method:"PUT",
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body:JSON.stringify({
+                name: document.getElementById("name").value,
+                email: document.getElementById("email").value,
+                phone: document.getElementById("phone").value,
+                source: document.getElementById("source").value,
+                status: document.getElementById("status").value
+            })
+        }
+    );
+
+    if(response.ok){
+        alert("Cập nhật thành công");
+        window.location.href = "/api/dashboard";
+    }else{
+        alert("Cập nhật thất bại");
+    }
+
+});
+
+</script>
+
+</body>
+</html>

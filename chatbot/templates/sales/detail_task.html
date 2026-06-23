@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết khách hàng</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+
+    <div class="row">
+
+        <!-- Thông tin khách hàng -->
+        <div class="col-md-4">
+
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Thông tin khách hàng</h5>
+                </div>
+
+                <div class="card-body">
+
+                    <p>
+                        <strong>Họ tên:</strong>
+                        <span id="customerName"></span>
+                    </p>
+
+                    <p>
+                        <strong>Số điện thoại:</strong>
+                        <span id="customerPhone"></span>
+                    </p>
+
+                    <p>
+                        <strong>Email:</strong>
+                        <span id="customerEmail"></span>
+                    </p>
+
+                    <p>
+                        <strong>Nguồn:</strong>
+                        <span id="customerSource"></span>
+                    </p>
+
+                    <p>
+                        <strong>Trạng thái:</strong>
+                        <span
+                            id="customerStatus"
+                            class="badge bg-success">
+                        </span>
+                    </p>
+
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">AI phân tích câu nói của khách hàng</h5>
+                </div>
+
+                <div class="card-header" id="ai_analysis">
+
+                </div>
+                <div class="card-header" style="background-color: yellow; display: grid;">
+                    <!-- <button onclick="exportExcel()">Xuất excel</button> -->
+                    <button 
+                        id="event_ai_analysis"
+                        style="
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                            transition: all 0.3s ease;
+                        "
+                    >
+                        AI Phân Tích
+                    </button>
+                    <div id="ai_loading" style="display:none">
+                        🤖 AI đang phân tích dữ liệu...
+                    </div>
+                    <button 
+                        id="export_excel"
+                        style="
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                            transition: all 0.3s ease;
+                            margin-top: 10px;
+                        "
+                    >
+                        📊 Xuất Excel
+                    </button>
+                </div>
+            </div>
+
+        </div>
+        
+
+        <!-- Danh sách nhiệm vụ -->
+        <div class="col-md-8">
+
+            <div class="card shadow-sm">
+
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        Nhiệm vụ được giao
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <table class="table table-bordered table-hover">
+
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tiêu đề</th>
+                                <th>Hạn xử lý</th>
+                                <th>Mô tả</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="taskList">
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+const token = localStorage.getItem("access_token");
+console.log(token);
+const customerId =
+    window.location.pathname.split("/").pop();
+
+async function loadCustomer() {
+
+    const response = await fetch(
+        `/api/get_customer/${customerId}`,
+        {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        }
+    );
+
+    const customer = await response.json();
+    console.log(customer);
+
+
+    document.getElementById("customerName").innerText =
+        customer.name;
+
+    document.getElementById("customerPhone").innerText =
+        customer.phone;
+
+    document.getElementById("customerEmail").innerText =
+        customer.email;
+
+    document.getElementById("customerSource").innerText =
+        customer.source;
+
+    document.getElementById("customerStatus").innerText =
+        customer.status;
+}
+
+async function loadTasks() {
+
+    const response = await fetch(
+        `/api/get_list_task_by_id/${customerId}`,
+        {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        }
+    );
+
+    const tasks = await response.json();
+
+    let html = "";
+
+    tasks.forEach(task => {
+
+        html += `
+            <tr>
+                <td>${task.id}</td>
+
+                <td>
+                    ${task.title}
+                </td>
+
+                <td>
+                    ${task.due_date}
+                </td>
+
+                <td>
+                    <span class="badge bg-info">
+                        ${task.description}
+                    </span>
+                </td>
+
+                <td>
+                    <select
+                        class="form-select status-select"
+                        data-id="${task.id}"
+                    >
+                        <option value="todo"
+                            ${task.status === "todo" ? "selected" : ""}>
+                            Chưa làm
+                        </option>
+
+                        <option value="doing"
+                            ${task.status === "doing" ? "selected" : ""}>
+                            Đang thực hiện
+                        </option>
+
+                        <option value="done"
+                            ${task.status === "done" ? "selected" : ""}>
+                            Hoàn thành
+                        </option>
+                        <option value="cancelled"
+                            ${task.status === "cancelled" ? "selected" : ""}>
+                            Đã hủy
+                        </option>
+                    </select>
+                </td>
+                <td>
+                    <button
+                        class="btn btn-primary btn-sm update-status"
+                        data-id="${task.id}">
+                        Cập nhật
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("taskList")
+        .innerHTML = html;
+}
+
+async function update_task(task_id){
+
+    const select = document.querySelector(
+        `.status-select[data-id="${task_id}"]`
+    );
+
+    console.log(select.value);
+
+    const response = await fetch(
+        `/api/update_task/${task_id}`,
+        {
+            method: "PUT",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                status: select.value
+            })
+        }
+    );
+
+    const task = await response.json();
+
+    console.log(task);
+}
+document.addEventListener("click", function(e){
+    if (e.target.classList.contains("update-status")){
+        const taskId = e.target.dataset.id;
+        console.log(taskId);
+        update_task(taskId);
+    }
+})
+
+async function list_ai_analysis(customer_id) {
+    const response = await fetch(
+        `/api/get_summary_ai_analysis/${customer_id}`,
+        {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        }
+    );
+
+    if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        let html = "";
+
+        data.forEach(analysis => {
+            const createdAt = new Date(analysis["created_at"]);
+
+            const vietnamTime = createdAt.toLocaleString("vi-VN", {
+                timeZone: "Asia/Ho_Chi_Minh"
+            });
+            html += `
+                <p>
+                    <strong>-${vietnamTime} </strong>
+                    <span>${analysis["ai_summary"]}</span>
+                </p>
+            `;
+        });
+
+        document.getElementById("ai_analysis").innerHTML = html;
+    } else {
+        document.getElementById("ai_analysis").innerHTML = `
+            <p>
+                <strong>- </strong>
+                <span>Chưa có thông tin</span>
+            </p>
+        `;
+    }
+}
+
+async function exportExcel(customerId) {
+    const response = await fetch(
+        `/api/export_ai_analysis/${customerId}`,
+        {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        }
+    );
+
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = "ai_analysis.xlsx";
+
+    document.body.appendChild(a);
+    a.click();
+
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+}
+
+async function event_ai_analysis(customerId) {
+    const button = document.getElementById("event_ai_analysis");
+    button.disabled = true;
+    const loading = document.getElementById("ai_loading");
+    loading.style.display = "block";
+
+    try {
+        const response = await fetch(
+            `/api/event_ai_analysis/${customerId}`,
+            {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        );
+        const data = await response.json();
+        if (response.ok){
+            loading.style.display = "none";
+            await list_ai_analysis(customerId);
+        }else{
+            loading.style.display = "none";
+            alert(data.message);
+        }
+
+    } catch (error) {
+        console.error(error);
+    }finally{
+         button.disabled = false;
+    }
+}
+
+document.getElementById("export_excel").addEventListener("click", function(){
+    exportExcel(customerId);
+});
+
+document.getElementById("event_ai_analysis").addEventListener("click", function(){
+    event_ai_analysis(customerId);
+});
+// function exportExcel() {
+//     window.location.href =
+//         `/api/export_ai_analysis/${customerId}`;
+// }
+
+
+
+
+list_ai_analysis(customerId);
+loadCustomer();
+loadTasks();
+
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM AI Chatbot</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#f5f7fb;
+    height:100vh;
+}
+
+.chat-container{
+    display:flex;
+    height:100vh;
+}
+
+/* Sidebar */
+.sidebar{
+    width:300px;
+    background:#fff;
+    border-right:1px solid #ddd;
+    overflow-y:auto;
+}
+
+.sidebar-header{
+    padding:20px;
+    border-bottom:1px solid #ddd;
+    font-size:20px;
+    font-weight:bold;
+}
+
+.conversation{
+    display:flex;
+    align-items:center;
+    padding:15px;
+    cursor:pointer;
+    border-bottom:1px solid #f0f0f0;
+}
+
+.conversation:hover{
+    background:#f7f7f7;
+}
+
+.avatar{
+    width:45px;
+    height:45px;
+    border-radius:50%;
+    background:#ddd;
+    margin-right:10px;
+}
+
+.conversation-info h4{
+    font-size:15px;
+}
+
+.conversation-info p{
+    font-size:13px;
+    color:#777;
+}
+
+/* Main Chat */
+.chat-main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+}
+
+.chat-header{
+    height:70px;
+    background:#fff;
+    border-bottom:1px solid #ddd;
+    display:flex;
+    align-items:center;
+    padding:0 20px;
+}
+
+.chat-header h3{
+    margin-left:10px;
+}
+
+.chat-body{
+    flex:1;
+    padding:20px;
+    overflow-y:auto;
+    background:#eef2f7;
+}
+
+/* Message */
+.message{
+    display:flex;
+    margin-bottom:15px;
+}
+
+.message.user{
+    justify-content:flex-end;
+}
+
+.message-content{
+    max-width:70%;
+    padding:12px 16px;
+    border-radius:12px;
+    line-height:1.5;
+}
+
+.customer .message-content{
+    background:#fff;
+}
+
+.user .message-content{
+    background:#1976d2;
+    color:white;
+}
+
+.ai .message-content{
+    background:#2e7d32;
+    color:white;
+}
+
+/* Input */
+.chat-footer{
+    background:#fff;
+    border-top:1px solid #ddd;
+    padding:15px;
+}
+
+.input-box{
+    display:flex;
+    gap:10px;
+}
+
+.input-box input{
+    flex:1;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+}
+
+.input-box button{
+    padding:12px 25px;
+    border:none;
+    background:#1976d2;
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+/* Customer Info */
+.customer-panel{
+    width:320px;
+    background:#fff;
+    border-left:1px solid #ddd;
+}
+
+.customer-header{
+    padding:20px;
+    border-bottom:1px solid #ddd;
+    text-align:center;
+}
+
+.customer-avatar{
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    background:#ddd;
+    margin:auto;
+}
+
+.customer-detail{
+    padding:20px;
+}
+
+.customer-detail p{
+    margin-bottom:12px;
+}
+
+.tag{
+    display:inline-block;
+    padding:5px 10px;
+    background:#e3f2fd;
+    border-radius:20px;
+    font-size:12px;
+}
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+        <div class="sidebar-header">
+            Hội thoại
+        </div>
+
+        <div class="conversation">
+            <div class="avatar"></div>
+            <div class="conversation-info">
+                <h4>Nguyễn Văn A</h4>
+                <p>Xin chào, tôi muốn mua sản phẩm...</p>
+            </div>
+        </div>
+
+        <div class="conversation">
+            <div class="avatar"></div>
+            <div class="conversation-info">
+                <h4>Trần Thị B</h4>
+                <p>Giá sản phẩm là bao nhiêu?</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Chat Main -->
+    <div class="chat-main">
+
+        <div class="chat-header">
+            <div class="avatar"></div>
+            <h3>Nguyễn Văn A</h3>
+        </div>
+
+        <div class="chat-body" id="chatBody">
+
+            <div class="message customer">
+                <div class="message-content">
+                    Xin chào, tôi muốn tìm hiểu về dịch vụ.
+                </div>
+            </div>
+
+            <div class="message ai">
+                <div class="message-content">
+                    Chào anh/chị, tôi là AI Assistant. Tôi có thể hỗ trợ gì cho anh/chị?
+                </div>
+            </div>
+
+            <div class="message user">
+                <div class="message-content">
+                    Tôi sẽ hỗ trợ thêm thông tin cho anh/chị.
+                </div>
+            </div>
+
+        </div>
+
+        <div class="chat-footer">
+            <div class="input-box">
+                <input
+                    type="text"
+                    id="messageInput"
+                    placeholder="Nhập tin nhắn..."
+                >
+                <button id="sendBtn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Customer Info -->
+    <div class="customer-panel">
+
+        <div class="customer-header">
+            <div class="customer-avatar"></div>
+            <h3>Nguyễn Văn A</h3>
+            <span class="tag">Khách hàng tiềm năng</span>
+        </div>
+
+        <div class="customer-detail">
+            <p><strong>SĐT:</strong> 0901234567</p>
+            <p><strong>Email:</strong> nguyenvana@gmail.com</p>
+            <p><strong>Nguồn:</strong> Facebook Ads</p>
+            <p><strong>Người phụ trách:</strong> Sale 01</p>
+            <p><strong>Trạng thái:</strong> Đang chăm sóc</p>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const sendBtn = document.getElementById("sendBtn");
+const messageInput = document.getElementById("messageInput");
+const chatBody = document.getElementById("chatBody");
+
+sendBtn.addEventListener("click", () => {
+
+    const message = messageInput.value.trim();
+
+    if(!message) return;
+
+    chatBody.innerHTML += `
+        <div class="message user">
+            <div class="message-content">
+                ${message}
+            </div>
+        </div>
+    `;
+
+    messageInput.value = "";
+
+    chatBody.scrollTop = chatBody.scrollHeight;
+});
+</script>
+
+</body>
+</html>

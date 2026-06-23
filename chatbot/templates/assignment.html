@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết khách hàng</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f5f7fb;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.08);
+        }
+
+        .card-header {
+            font-weight: 600;
+        }
+
+        .history-item {
+            padding: 12px;
+            border-left: 4px solid #0d6efd;
+            background: #f8f9fa;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+
+        textarea {
+            resize: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Chi tiết khách hàng</h2>
+
+        <a href="/api/dashboard" class="btn btn-secondary">
+            Quay lại
+        </a>
+    </div>
+
+    <!-- Thông tin khách hàng -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            Thông tin khách hàng
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Họ tên</label>
+                    <input type="text" id="name" class="form-control">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Điện thoại</label>
+                    <input type="text" id="phone" class="form-control">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="email" class="form-control">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nguồn</label>
+                    <select id="source" class="form-select">
+                        <option value="facebook">Facebook</option>
+                        <option value="zalo">Zalo</option>
+                        <option value="website">Website</option>
+                        <option value="tiktok">TikTok</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Trạng thái</label>
+                    <select id="status" class="form-select">
+                        <option value="new">New</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="qualified">Qualified</option>
+                        <option value="won">Won</option>
+                        <option value="lost">Lost</option>
+                    </select>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Phân công Sale -->
+    <div class="card mb-4">
+
+        <div class="card-header bg-success text-white">
+            Phân công nhân viên chăm sóc
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6">
+                    <label class="form-label">
+                        Sale phụ trách
+                    </label>
+
+                    <select id="assigned_to" class="form-select">
+                        <option value="">-- Chọn nhân viên --</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-end">
+
+                    <button class="btn btn-success w-100"
+                            id="assignBtn">
+                        Cập nhật phân công
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Giao việc -->
+    <div class="card mb-4">
+
+        <div class="card-header bg-warning">
+            Giao công việc
+        </div>
+
+        <div class="card-body">
+
+            <div class="mb-3">
+                <label class="form-label">
+                    Tiêu đề công việc
+                </label>
+
+                <input type="text"
+                       id="taskTitle"
+                       class="form-control">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">
+                    Deadline
+                </label>
+
+                <input type="date"
+                       id="deadline"
+                       class="form-control">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">
+                    Ghi chú
+                </label>
+
+                <textarea
+                    id="taskNote"
+                    rows="4"
+                    class="form-control"></textarea>
+            </div>
+
+            <button class="btn btn-warning"
+                    id="createTaskBtn">
+                Giao việc
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- Danh sách công việc -->
+    <div class="card mb-4">
+
+        <div class="card-header bg-info text-white">
+            Danh sách công việc
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-bordered">
+
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Công việc</th>
+                    <th>Deadline</th>
+                    <th>Trạng thái</th>
+                </tr>
+                </thead>
+
+                <tbody id="taskList">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <!-- Lịch sử hoạt động -->
+    <div class="card">
+
+        <div class="card-header bg-dark text-white">
+            Lịch sử hoạt động
+        </div>
+
+        <div class="card-body" id="activityList">
+
+            <div class="history-item">
+                <strong>02/06/2026 15:30</strong><br>
+                Admin chuyển khách hàng cho sale01
+            </div>
+
+            <div class="history-item">
+                <strong>02/06/2026 16:00</strong><br>
+                Giao việc: Gọi điện tư vấn khách hàng
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const token = localStorage.getItem("access_token");
+
+if (!token) {
+    window.location.href = "/api/login_view";
+}
+
+// Lấy id từ URL
+// Ví dụ: /customer-update/46
+const customerId = window.location.pathname.split('/').pop();
+
+
+// =======================
+// Load thông tin khách hàng
+// =======================
+async function loadCustomer(customerId) {
+
+    const response = await fetch(
+        `/api/get_customer/${customerId}`,
+        {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Không lấy được thông tin khách hàng");
+    }
+
+    const data = await response.json();
+
+    document.getElementById("name").value = data.name || "";
+    document.getElementById("email").value = data.email || "";
+    document.getElementById("phone").value = data.phone || "";
+    document.getElementById("source").value = data.source || "";
+    document.getElementById("status").value = data.status || "";
+
+    return data;
+}
+
+
+// =======================
+// Load danh sách nhân viên
+// =======================
+async function loadUsers(currentAssignedId = null) {
+
+    const response = await fetch(
+        "/api/get_user_sale_and_manager",
+        {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Không lấy được danh sách nhân viên");
+    }
+
+    const users = await response.json();
+
+    const select = document.getElementById("assigned_to");
+
+    let html = '<option value="">-- Chọn nhân viên --</option>';
+
+    users.forEach(user => {
+
+        html += `
+            <option value="${user.id}">
+                ${user.username} (${user.role})
+            </option>
+        `;
+    });
+
+    select.innerHTML = html;
+    // Tự động chọn nhân viên đã được phân công
+    if (currentAssignedId) {
+        select.value = currentAssignedId;
+    }
+
+    document.getElementById("assignBtn").addEventListener(
+    "click",
+    async function () {
+
+        const selectUserId = select.value;
+
+        const response = await fetch(
+            `/api/update_customer/${customerId}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    assigned_to: selectUserId
+                })
+            }
+        );
+
+        if (response.ok) {
+            console.log("ok");
+        } else {
+            console.log("error");
+        }
+    });
+    
+}
+
+
+// =======================
+// Khởi tạo trang
+// =======================
+async function init() {
+    try {
+
+        // Lấy thông tin khách hàng
+        const customer = await loadCustomer(customerId);
+
+        console.log(customer);
+
+        // Nếu API trả về assigned_to là object:
+        // { assigned_to: { id: 3, username: "sale01" } }
+        // thì dùng:
+        // const assignedId = customer.assigned_to?.id;
+
+        // Nếu API trả về assigned_to là id:
+        // { assigned_to: 3 }
+        // thì dùng:
+        const assignedId = customer.assigned_to;
+
+        // Load danh sách nhân viên và chọn đúng người phụ trách
+        await loadUsers(assignedId);
+
+    } catch (error) {
+        console.error(error);
+        alert("Có lỗi xảy ra khi tải dữ liệu.");
+    }
+}
+
+init();
+
+const createTaskBtn = document.getElementById("createTaskBtn");
+createTaskBtn.addEventListener("click", async function(){
+    const response = await fetch('/api/create_task', {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            title: document.getElementById("taskTitle").value,
+            description: document.getElementById("taskNote").value,
+            due_date: document.getElementById("deadline").value,
+            customer: customerId,
+        })
+    });
+    const data = await response.json();
+    if (response.ok) {
+        console.log("ok", data);
+    } else {
+        console.log("error", data);
+    }
+
+});
+async function loadTasks() {
+    try {
+        const response = await fetch(
+            `/api/get_list_task_by_id/${customerId}`,
+            {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log("ok", data);
+        } else {
+            console.log("error", data);
+            return;
+        }
+
+        const tbody = document.getElementById("taskList");
+
+        let html = "";
+
+        if (Array.isArray(data)) {
+            data.forEach(task => {
+                html += `
+                    <tr>
+                        <td>${task.id}</td>
+                        <td>${task.title}</td>
+                        <td>${task.due_date}</td>
+                        <td>
+                            <span class="badge bg-warning">
+                                ${task.status}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        tbody.innerHTML = html;
+
+    } catch (error) {
+        console.error("Lỗi:", error);
+    }
+}
+
+loadTasks();
+
+
+</script>
+</body>
+
+</html>
