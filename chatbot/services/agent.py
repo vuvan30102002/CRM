@@ -1,11 +1,18 @@
-from .llm import generate, ai_analysis, ai_task
-from .customer_service import save_message, save_ai_analysis, save_ai_task
+from .llm import generate_chitchat, generate_function_calling, generate_knowledge, ai_analysis, ai_task, intent_classifiter
+from .customer_service import save_message, save_ai_analysis, save_ai_task, get_knowledge
 
 class CRMAgent:
 
     def run(self,customer_id,question):
 
-        answer = generate(customer_id, question)
+        intent = intent_classifiter(question)
+        if intent == "FUNCTION":
+            answer = generate_function_calling(customer_id, question)
+        elif intent == "KNOWLEDGE":
+            knowledge = get_knowledge(question)
+            answer = generate_knowledge(customer_id, question, knowledge)
+        else:
+            answer = generate_chitchat(customer_id, question)
 
         message = save_message(customer_id,"customer",question)
 

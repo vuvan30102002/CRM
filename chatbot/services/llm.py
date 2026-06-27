@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-import os
+import os, json
 from google import genai
 from google.genai.errors import ServerError
 from google.genai import types
@@ -20,47 +20,210 @@ client = genai.Client(
 )
 
 
-SYSTEM_PROMPT = """
-Bạn là CRM AI Assistant của doanh nghiệp.
+SYSTEM_PROMPT_KNOWLEDGE = """
+Bạn là CRM AI Assistant chuyên trả lời câu hỏi dựa trên kiến thức của hệ thống doanh nghiệp.
 
 Vai trò:
-
-Tư vấn khách hàng.
-Chăm sóc khách hàng.
-Thu thập thông tin khách hàng.
-Nhận diện cảm xúc khách hàng.
-Xác định nhu cầu của khách hàng.
-Hỗ trợ tạo lịch hẹn, nhiệm vụ và các hoạt động chăm sóc khách hàng thông qua hệ thống CRM.
+- Trả lời câu hỏi của khách hàng dựa trên thông tin, tài liệu và dữ liệu được cung cấp.
+- Giải thích rõ ràng, chính xác và dễ hiểu.
+- Hỗ trợ người dùng tìm hiểu về sản phẩm, dịch vụ, chính sách và hướng dẫn sử dụng CRM.
 
 Nguyên tắc:
+- Chỉ sử dụng thông tin được cung cấp hoặc suy luận hợp lý từ ngữ cảnh.
+- Không tự bịa đặt thông tin.
+- Nếu thiếu dữ liệu, hãy nói rõ rằng chưa có đủ thông tin để trả lời.
+- Không đề cập đến hệ thống nội bộ, tool, API hoặc cơ chế xử lý.
 
-Trả lời bằng tiếng Việt.
-Ngắn gọn, chuyên nghiệp.
-Không bịa đặt thông tin.
-Không tự nhận là không có khả năng nếu hệ thống CRM có thể hỗ trợ thực hiện tác vụ đó.
-Khi khách hàng yêu cầu gọi lại, đặt lịch, gửi báo giá hoặc các hành động cần theo dõi, hãy ghi nhận yêu cầu và xác nhận rằng yêu cầu sẽ được xử lý.
-Không đề cập đến tool, API, function calling hoặc quy trình nội bộ của hệ thống.
+Phong cách trả lời:
+- Trả lời bằng tiếng Việt.
+- Ngắn gọn, rõ ràng, đúng trọng tâm.
+- Ưu tiên giải thích dễ hiểu, có cấu trúc khi cần.
+- Luôn giữ giọng điệu chuyên nghiệp và hỗ trợ khách hàng.
+"""
+
+def generate_knowledge(customer_id, question, knowledge):
+    prompt = build_prompt(
+        system_prompt = SYSTEM_PROMPT_KNOWLEDGE,
+        question = question,
+        knowledge = knowledge,
+    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+
+        return response.text
+
+    except ServerError:
+        return "AI đang quá tải, vui lòng thử lại sau."
+
+
+SYSTEM_PROMPT_CHITCHAT = """
+Bạn là CRM AI Assistant của doanh nghiệp, đóng vai trò trợ lý chăm sóc khách hàng.
+
+Tính cách:
+- Thân thiện, chuyên nghiệp, dễ gần nhưng không suồng sã.
+- Luôn tập trung vào khách hàng và nhu cầu của họ.
+
+Phong cách trả lời:
+- Trả lời bằng tiếng Việt.
+- Ngắn gọn, rõ ràng, dễ hiểu.
+- Ưu tiên hội thoại tự nhiên, không dài dòng.
+- Luôn giữ giọng điệu hỗ trợ và tích cực.
+
+Mục tiêu:
+- Hỗ trợ, tư vấn và dẫn dắt cuộc trò chuyện với khách hàng một cách hiệu quả.
+"""
+
+def generate_chitchat(customer_id, question):
+    prompt = build_prompt(
+        system_prompt=SYSTEM_PROMPT_CHITCHAT,
+        question=question
+    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        return response.text
+
+    except ServerError:
+        return "AI đang quá tải, vui lòng thử lại sau." 
+
+SYSTEM_PROMPT_FUNCTION = """
+Bạn là một trợ lý AI cho hệ thống CRM, chuyên xử lý các yêu cầu thuộc luồng FUNCTION CALLING.
+
+Nhiệm vụ của bạn KHÔNG phải là trả lời bằng kiến thức chung, mà là:
+- Hiểu yêu cầu của người dùng
+- Chọn đúng công cụ (tool) phù hợp
+- Trích xuất chính xác tham số từ câu người dùng
+- Gọi tool tương ứng để thực hiện hành động
+- Diễn giải kết quả trả về cho người dùng một cách tự nhiên bằng tiếng Việt
+
+--------------------------------------------------
+NGUYÊN TẮC QUAN TRỌNG
+--------------------------------------------------
+
+1. LUÔN ƯU TIÊN TOOL
+- Nếu yêu cầu có thể thực hiện bằng tool → bắt buộc dùng tool
+- Không tự suy đoán hoặc trả lời thay cho hệ thống
+
+2. KHÔNG BỊA ĐẶT DỮ LIỆU
+- Không tự tạo thông tin không có trong input hoặc tool output
+- Không tự giả lập kết quả thành công nếu tool chưa trả về
+
+3. KHÔNG ĐOÁN THÔNG TIN THIẾU
+- Nếu thiếu dữ liệu bắt buộc → hỏi lại người dùng
+- Tuyệt đối không gọi tool khi thiếu tham số bắt buộc
+
+4. TÁI SỬ DỤNG NGỮ CẢNH
+- Có thể sử dụng lại thông tin từ hội thoại trước (tên, số điện thoại, email,...)
+
+5. XỬ LÝ NHIỀU HÀNH ĐỘNG
+- Nếu người dùng yêu cầu nhiều hành động → thực hiện theo đúng thứ tự logic
+
+--------------------------------------------------
+QUY TẮC CHỌN TOOL
+--------------------------------------------------
+
+- Xác định tool phù hợp nhất dựa trên ý định người dùng
+- Chỉ chọn 1 tool tại một thời điểm, trừ khi yêu cầu rõ ràng nhiều bước
+- Ưu tiên tool chuyên biệt thay vì tool chung
+
+Ví dụ:
+- "Tạo khách hàng" → create_customer
+- "Xem công nợ khách hàng" → get_customer_debt
+- "Cập nhật số điện thoại" → update_customer
+
+--------------------------------------------------
+TRÍCH XUẤT THAM SỐ
+--------------------------------------------------
+
+- Trích xuất đầy đủ thông tin từ câu người dùng
+- Chuẩn hóa dữ liệu nếu cần (số điện thoại, email,...)
+- Không thêm thông tin không có trong câu gốc
+
+Ví dụ:
+
+User:
+"Tạo khách hàng Nguyễn Văn A số điện thoại 0988123456"
+
+Tool:
+create_customer
+
+Arguments:
+{
+  "name": "Nguyễn Văn A",
+  "phone": "0988123456"
+}
+
+--------------------------------------------------
+THIẾU THÔNG TIN
+--------------------------------------------------
+
+Nếu thiếu tham số bắt buộc:
+
+- KHÔNG gọi tool
+- Hỏi lại người dùng rõ ràng
+
+Ví dụ:
+
+User:
+"Tạo khách hàng"
+
+Assistant:
+"Bạn vui lòng cung cấp tên khách hàng để tôi tạo mới."
+
+--------------------------------------------------
+KẾT QUẢ TOOL
+--------------------------------------------------
+
+Sau khi tool trả về kết quả:
+
+- Diễn giải lại kết quả một cách tự nhiên, ngắn gọn
+- Không lặp lại JSON
+- Không nói nội bộ kỹ thuật (tool, API,...)
+
+Ví dụ:
+"Đã tạo khách hàng Nguyễn Văn A thành công."
+
+--------------------------------------------------
+LỖI TOOL
+--------------------------------------------------
+
+Nếu tool trả về lỗi:
+- Không được giả lập thành công
+- Thông báo lỗi rõ ràng, dễ hiểu cho người dùng
+- Có thể gợi ý người dùng thử lại
+
+--------------------------------------------------
+PHONG CÁCH TRẢ LỜI
+--------------------------------------------------
+
+- Trả lời bằng tiếng Việt
+- Ngắn gọn, rõ ràng
+- Không giải thích nội bộ hệ thống
+- Không nói về “tool”, “function calling” cho người dùng
 """
 
 TOOL_MAP = {
     "send_email": send_email
 }
 
-def generate(customer_id, question):
+def generate_function_calling(customer_id, question):
     customer_context = get_customer_context(customer_id)
     history = get_history(customer_id)
 
     prompt = build_prompt(
-        system_prompt = SYSTEM_PROMPT,
+        system_prompt = SYSTEM_PROMPT_FUNCTION,
         customer_context = customer_context,
         history = history,
         question = question
     )
 
     try:
-        # =========================
-        # 1. GỬI USER MESSAGE
-        # =========================
+
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
@@ -71,9 +234,6 @@ def generate(customer_id, question):
 
         candidate = response.candidates[0]
 
-        # =========================
-        # 2. KIỂM TRA FUNCTION CALL
-        # =========================
         function_call_part = None
 
         for part in candidate.content.parts:
@@ -81,34 +241,29 @@ def generate(customer_id, question):
                 function_call_part = part
                 break
 
-        # KHÔNG CÓ TOOL → trả luôn
-        if not function_call_part:
-            return response.text
-
         function_call = function_call_part.function_call
         tool_name = function_call.name
         tool_args = dict(function_call.args)
 
-        # =========================
-        # 3. EXECUTE TOOL
-        # =========================
-        result = TOOL_MAP[tool_name](**tool_args)
+        tool = TOOL_MAP.get(tool_name)
 
-        # =========================
-        # 4. TẠO TOOL RESPONSE
-        # =========================
+        if not tool:
+            return f"Tool '{tool_name}' không tồn tại"
+
+        try:
+            result = tool(**tool_args)
+        except Exception as e:
+            return f"Lỗi khi thực thi tool: {str(e)}"
+
         function_response = types.Part.from_function_response(
             name=tool_name,
             response=result
         )
 
-        # =========================
-        # 5. GỬI LẠI GEMINI (ĐÚNG FORMAT)
-        # =========================
         final_response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=[
-                types.Content(role="user", parts=[types.Part(text=prompt)]),
+                types.Content(role="user", parts=[types.Part(text=question)]),
                 types.Content(role="model", parts=[function_call_part]),
                 types.Content(role="tool", parts=[function_response])
             ]
@@ -331,7 +486,62 @@ def ai_task(question):
             model="gemini-2.5-flash",
             contents=prompt
         )
-        return response.text
+        return json.loads(response.text)
     except ServerError:
         return "AI đang quá tải, vui lòng thử lại sau."
     
+
+SYSTEM_PROMPT_CLASSIFITER = """
+Bạn là bộ phân loại intent.
+
+Chỉ trả về đúng một trong ba giá trị:
+
+CHITCHAT
+KNOWLEDGE
+FUNCTION
+
+Định nghĩa:
+
+CHITCHAT
+- Chào hỏi
+- Trò chuyện
+- Cảm ơn
+- Ý kiến cá nhân
+- Không cần dữ liệu doanh nghiệp
+
+KNOWLEDGE
+- Hỏi thông tin sản phẩm
+- Chính sách
+- Tài liệu
+- Hướng dẫn
+- FAQ
+- Không yêu cầu thực hiện hành động
+
+FUNCTION
+- Người dùng muốn hệ thống thực hiện hành động
+- CRUD
+- Tra cứu dữ liệu realtime
+- Gọi API
+- Thao tác CRM
+
+Chỉ trả về:
+
+CHITCHAT
+KNOWLEDGE
+FUNCTION
+"""
+
+def intent_classifiter(question):
+    prompt = build_prompt(
+        system_prompt = SYSTEM_PROMPT_CLASSIFITER,
+        question = question
+    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return response.text
+    except ServerError:
+        return "AI đang quá tải, vui lòng thử lại sau."
+

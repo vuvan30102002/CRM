@@ -15,3 +15,10 @@ whitenoise[brotli]==6.6.0
 google-genai
 python-dotenv
 openpyxl
+langchain-text-splitters
+langchain
+langchain-community
+pypdf
+sentence-transformers
+faiss-cpu
+langchain-huggingface

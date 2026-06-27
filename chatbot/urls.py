@@ -48,6 +48,8 @@ urlpatterns = [
     path("export_ai_analysis/<int:customer_id>",views.export_ai_analysis_excel,name="export_customers"),
     path("event_ai_analysis/<int:customer_id>", views.event_ai_analysis, name = "eventAiAnalysis"),
 
+    # ask
+    path("ask", views.ask, name = "ask"),
 
 
 

@@ -16,6 +16,7 @@ from .services.agent import CRMAgent
 
 from .services.llm import ai_analysis
 from .services.customer_service import save_ai_analysis
+from .services.model_llm import search
 
 from openpyxl import Workbook
 # Create your views here.
@@ -394,3 +395,12 @@ def event_ai_analysis(request, customer_id):
             {"message" : "Không lưu thành công analysis vào data"},
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+
+@api_view(["GET"])
+def ask(request):
+    results = search(request.data.get("query"))
+    return Response(
+        {"message" : results},
+        status=status.HTTP_201_CREATED
+    )

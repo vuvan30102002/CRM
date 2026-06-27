@@ -20,7 +20,7 @@ def get_history(customer_id):
         history += f"{msg.sender}: {msg.content}\n"
     return history
 
-def build_prompt(system_prompt = None ,customer_context = None ,history = None ,question = None):
+def build_prompt(system_prompt = None ,customer_context = None ,history = None ,question = None, knowledge = None):
     return f"""
 {system_prompt}
 
@@ -32,6 +32,9 @@ def build_prompt(system_prompt = None ,customer_context = None ,history = None ,
 
 === CÂU HỎI MỚI ===
 {question}
+
+=== KIẾN THỨC ===
+{knowledge}
 
 === TRẢ LỜI ===
 """
