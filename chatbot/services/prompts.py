@@ -20,21 +20,34 @@ def get_history(customer_id):
         history += f"{msg.sender}: {msg.content}\n"
     return history
 
-def build_prompt(system_prompt = None ,customer_context = None ,history = None ,question = None, knowledge = None):
-    return f"""
-{system_prompt}
+def build_prompt(
+    system_prompt=None,
+    customer_context=None,
+    history=None,
+    question=None,
+    knowledge=None,
+    web_search=None,
+):
+    sections = []
 
-=== THÔNG TIN KHÁCH HÀNG ===
-{customer_context}
+    if system_prompt:
+        sections.append(system_prompt)
 
-=== LỊCH SỬ HỘI THOẠI ===
-{history}
+    if customer_context:
+        sections.append(f"=== THÔNG TIN KHÁCH HÀNG ===\n{customer_context}")
 
-=== CÂU HỎI MỚI ===
-{question}
+    if history:
+        sections.append(f"=== LỊCH SỬ HỘI THOẠI ===\n{history}")
 
-=== KIẾN THỨC ===
-{knowledge}
+    if question:
+        sections.append(f"=== CÂU HỎI MỚI ===\n{question}")
 
-=== TRẢ LỜI ===
-"""
+    if knowledge:
+        sections.append(f"=== KIẾN THỨC ===\n{knowledge}")
+
+    if web_search:
+        sections.append(f"=== WEB SEARCH ===\n{web_search}")
+
+    sections.append("=== TRẢ LỜI ===")
+
+    return "\n\n".join(sections)

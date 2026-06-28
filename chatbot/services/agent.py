@@ -1,6 +1,12 @@
-from .llm import generate_chitchat, generate_function_calling, generate_knowledge, ai_analysis, ai_task, intent_classifiter
-from .customer_service import save_message, save_ai_analysis, save_ai_task, get_knowledge
+from .llm import generate_chitchat, generate_function_calling, generate_knowledge, ai_analysis, ai_task, intent_classifiter, web_search
+from .customer_service import save_message, save_ai_analysis, save_ai_task, get_knowledge, get_web_search
+from tavily import TavilyClient
+from dotenv import load_dotenv
+import os, json
+load_dotenv()
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
+client = TavilyClient(TAVILY_API_KEY)
 class CRMAgent:
 
     def run(self,customer_id,question):
@@ -11,6 +17,9 @@ class CRMAgent:
         elif intent == "KNOWLEDGE":
             knowledge = get_knowledge(question)
             answer = generate_knowledge(customer_id, question, knowledge)
+        elif intent == "WEB_SEARCH":
+            result_web_search = get_web_search(client, question)
+            answer = web_search(result_web_search, question)
         else:
             answer = generate_chitchat(customer_id, question)
 

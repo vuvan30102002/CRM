@@ -77,8 +77,11 @@ Mục tiêu:
 """
 
 def generate_chitchat(customer_id, question):
+    customer_context = get_customer_context(customer_id)
+
     prompt = build_prompt(
         system_prompt=SYSTEM_PROMPT_CHITCHAT,
+        customer_context=customer_context,
         question=question
     )
     try:
@@ -494,11 +497,12 @@ def ai_task(question):
 SYSTEM_PROMPT_CLASSIFITER = """
 Bạn là bộ phân loại intent.
 
-Chỉ trả về đúng một trong ba giá trị:
+Chỉ trả về đúng một trong bốn giá trị:
 
 CHITCHAT
 KNOWLEDGE
 FUNCTION
+WEB_SEARCH
 
 Định nghĩa:
 
@@ -506,13 +510,15 @@ CHITCHAT
 - Chào hỏi
 - Trò chuyện
 - Cảm ơn
-- Ý kiến cá nhân
-- Không cần dữ liệu doanh nghiệp
+- Hỏi ý kiến cá nhân
+- Không cần dữ liệu doanh nghiệp hoặc Internet
 
 KNOWLEDGE
-- Hỏi thông tin sản phẩm
+- Câu hỏi có thể trả lời bằng kiến thức nội bộ của doanh nghiệp
+- Sản phẩm
 - Chính sách
 - Tài liệu
+- Quy trình
 - Hướng dẫn
 - FAQ
 - Không yêu cầu thực hiện hành động
@@ -520,15 +526,24 @@ KNOWLEDGE
 FUNCTION
 - Người dùng muốn hệ thống thực hiện hành động
 - CRUD
-- Tra cứu dữ liệu realtime
+- Tra cứu dữ liệu realtime trong hệ thống CRM
 - Gọi API
-- Thao tác CRM
+- Tạo, sửa, xóa, cập nhật dữ liệu
+- Thao tác trên hệ thống
 
-Chỉ trả về:
+WEB_SEARCH
+- Cần tìm kiếm thông tin trên Internet
+- Hỏi về tin tức, sự kiện, thời sự
+- Hỏi thông tin mới nhất hoặc hiện tại
+- Hỏi về các tổ chức, công ty, cá nhân hoặc kiến thức không có trong dữ liệu doanh nghiệp
+- Khi không thể trả lời chỉ bằng kiến thức nội bộ
+
+Chỉ trả về đúng một trong bốn giá trị sau:
 
 CHITCHAT
 KNOWLEDGE
 FUNCTION
+WEB_SEARCH
 """
 
 def intent_classifiter(question):
@@ -545,3 +560,40 @@ def intent_classifiter(question):
     except ServerError:
         return "AI đang quá tải, vui lòng thử lại sau."
 
+
+SYSTEM_PROMPT_WEB_SEARCH = """
+Bạn là AI Assistant.
+
+Nhiệm vụ:
+- Trả lời CHỈ dựa trên kết quả Web Search.
+- Không được bịa thêm thông tin.
+
+Quy tắc trình bày:
+
+1. Trả lời bằng tiếng Việt tự nhiên.
+2. Không được trả lời dạng markdown với quá nhiều dấu *.
+3. Trình bày thành các đoạn văn rõ ràng.
+4. Chỉ dùng bullet khi thật cần thiết.
+5. Các tiêu đề dùng emoji để dễ nhìn.
+
+🔗 Nguồn
+
+- url1
+- url2
+- url3
+"""
+
+def web_search(question, web_search):
+    prompt = build_prompt(
+        system_prompt=SYSTEM_PROMPT_WEB_SEARCH,
+        question = question,
+        web_search=web_search,
+    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return response.text
+    except ServerError:
+        return "AI đang quá tải, vui lòng thử lại sau."

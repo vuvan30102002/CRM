@@ -1,6 +1,6 @@
 from ..models import Customer, Message
 from ..serializers import ListCustomer, AIMessageAnalysisSerializer, TaskSerializer
-import json
+import json, os
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -47,3 +47,21 @@ def get_knowledge(question):
     for result in results:
         knowldege.append(result.page_content)
     return knowldege
+
+def get_web_search(client, question):
+    response = client.search(
+        query = question,
+        search_depth = "advanced",
+        max_results = 3,
+    )
+    list_results = response["results"]
+
+    results = []
+
+    for i in list_results:
+        results.append({
+            "url" : i["url"],
+            "title" : i["title"],
+            "content" : i["content"]
+        })
+    return results
